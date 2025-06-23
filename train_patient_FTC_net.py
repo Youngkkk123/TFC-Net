@@ -276,12 +276,16 @@ if __name__ == '__main__':
             epoch_start = time.time()
             model, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe, train_threshold = train_process(
                 model, optimizer, trainloader, processor, device)
-            model, avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, val_threshold = val_process(model,valloader,processor,device)
+            model, avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, val_threshold = val_process(model,
+                                                                                                               valloader,
+                                                                                                               processor,
+                                                                                                               device)
             epoch_end = time.time()
 
             history.append([avg_train_loss, avg_valid_loss, avg_train_auc, avg_valid_auc])
 
-            if (epoch_i + 1) > 5 and best_avg_valid_auc <= avg_valid_auc:
+            # 修改保存模型的条件
+            if (epoch_i + 1) > 5 and best_avg_valid_loss >= avg_valid_loss:
                 best_avg_valid_loss = avg_valid_loss
                 best_avg_valid_auc = avg_valid_auc
                 best_acc = valid_acc
