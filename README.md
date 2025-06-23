@@ -6,6 +6,8 @@ File descriptions are as follows:
 * eval_patient_siglip.py: This code is for model testing.
 * datagenerator.py: This code is for dataset class.
 * data_augmentation.py: This code is for dataset augmentation.
+* Loss.py: This code is for definition of Focal_loss.
+* utils_index.py: This code is for calculation of Auc.
 
 How to start
 =============
