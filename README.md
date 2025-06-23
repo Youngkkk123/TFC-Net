@@ -1,1 +1,1 @@
-# Thyroid-adenomas-classify-siglipYoungkkk123-Thyroid-adenomas-classification
+# Thyroid-adenomas-classification
