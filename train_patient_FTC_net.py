@@ -265,53 +265,61 @@ if __name__ == '__main__':
 
         history = []
 
-        best_avg_valid_loss = 9999
-        best_avg_valid_auc = 0
-        best_acc = 0
-        best_sen = 0
-        best_spe = 0
-        best_epoch = 0
-        best_threshold = 0
-        for epoch_i in range(epoch):
-            epoch_start = time.time()
-            model, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe, train_threshold = train_process(
-                model, optimizer, trainloader, processor, device)
-            model, avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, val_threshold = val_process(model,
-                                                                                                               valloader,
-                                                                                                               processor,
-                                                                                                               device)
-            epoch_end = time.time()
+best_avg_valid_loss = 9999
+best_avg_valid_auc = 0
+best_acc = 0
+best_sen = 0
+best_spe = 0
+best_epoch = 0
+best_threshold = 0
+early_stopping_patience = 10  # 早停等待轮数
+early_stopping_counter = 0    # 早停计数器
 
-            history.append([avg_train_loss, avg_valid_loss, avg_train_auc, avg_valid_auc])
+for epoch_i in range(epoch):
+    epoch_start = time.time()
+    model, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe, train_threshold = train_process(
+        model, optimizer, trainloader, processor, device)
+    model, avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, val_threshold = val_process(model,valloader,processor,device)
+    epoch_end = time.time()
 
-            # 修改保存模型的条件
-            if (epoch_i + 1) > 5 and best_avg_valid_loss >= avg_valid_loss:
-                best_avg_valid_loss = avg_valid_loss
-                best_avg_valid_auc = avg_valid_auc
-                best_acc = valid_acc
-                best_sen = valid_sen
-                best_spe = valid_spe
-                best_epoch = epoch_i + 1
-                best_threshold = val_threshold
-                torch.save(model, model_save + '/' + "Best_model.pt")
-                train_info = 'Epoch: {:03d}, Training: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, threshold: {:.4f} \nValidation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, threshold: {:.4f}, Time: {:.4f}s, \nlearning rate: {:.7f}'.format(
-                    epoch_i + 1, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe, train_threshold,
-                    avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, best_threshold,
-                    epoch_end - epoch_start, optimizer.param_groups[0]['lr']
-                )
-                with open(model_save + '/' + 'train_metrics.txt', 'w') as f:
-                    f.write(train_info)
+    history.append([avg_train_loss, avg_valid_loss, avg_train_auc, avg_valid_auc])
 
-            print(
-                "Epoch: {:03d}, Training: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f} \n\t\t\tValidation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, Time: {:.4f}s, \n\t\t\tlearning rate: {:.7f}".format(
-                    epoch_i + 1, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe,
-                    avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe,
-                    epoch_end - epoch_start, optimizer.param_groups[0]['lr']
-                ))
-            print(
-                "Best Epoch: {:03d}, Validation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}".format(
-                    best_epoch, best_avg_valid_loss, best_avg_valid_auc, best_acc, best_sen, best_spe
-                ))
+    if (epoch_i + 1) > 5 and best_avg_valid_loss >= avg_valid_loss:
+        best_avg_valid_loss = avg_valid_loss
+        best_avg_valid_auc = avg_valid_auc
+        best_acc = valid_acc
+        best_sen = valid_sen
+        best_spe = valid_spe
+        best_epoch = epoch_i + 1
+        best_threshold = val_threshold
+        torch.save(model, model_save + '/' + "Best_model.pt")
+        train_info = 'Epoch: {:03d}, Training: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, threshold: {:.4f} \nValidation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, threshold: {:.4f}, Time: {:.4f}s, \nlearning rate: {:.7f}'.format(
+            epoch_i + 1, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe, train_threshold,
+            avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe, best_threshold,
+            epoch_end - epoch_start, optimizer.param_groups[0]['lr']
+        )
+        with open(model_save + '/' + 'train_metrics.txt', 'w') as f:
+            f.write(train_info)
+        early_stopping_counter = 0  # 重置早停计数器
+    else:
+        early_stopping_counter += 1  # 验证loss未改善，计数器+1
+
+    print(
+        "Epoch: {:03d}, Training: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f} \n\t\t\tValidation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, Time: {:.4f}s, \n\t\t\tlearning rate: {:.7f}".format(
+            epoch_i + 1, avg_train_loss, avg_train_auc, train_acc, train_sen, train_spe,
+            avg_valid_loss, avg_valid_auc, valid_acc, valid_sen, valid_spe,
+            epoch_end - epoch_start, optimizer.param_groups[0]['lr']
+        ))
+    print(
+        "Best Epoch: {:03d}, Validation: Loss: {:.4f}, AUC: {:.4f}, ACC: {:.4f}, SEN: {:.4f}, SPE: {:.4f}, Early Stopping Counter: {:02d}/{:02d}".format(
+            best_epoch, best_avg_valid_loss, best_avg_valid_auc, best_acc, best_sen, best_spe,
+            early_stopping_counter, early_stopping_patience
+        ))
+
+    # 触发早停条件
+    if early_stopping_counter >= early_stopping_patience:
+        print(f"Early stopping triggered after {early_stopping_patience} epochs without improvement!")
+        break
 
         torch.save(history, model_save + '/history.pt')
 
